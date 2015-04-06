@@ -40,7 +40,9 @@ namespace msd {
 				//copy back
 			}
 */
-		
+		/*
+		 * test
+		 */
 		template <typename T>
 			void eigen_centrality(Graph<T>& graph, std::map<T,double>& result)
 			{
