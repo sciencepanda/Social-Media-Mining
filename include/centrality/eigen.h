@@ -7,38 +7,6 @@
 #include "../base/graph.h"
 
 namespace smm {
-
-/*		template <typename T>
-			void graph_to_matrix(Graph<T>& graph, Eigen::MatrixXd& matrix)
-			{
-				for (typename Graph<T>::size_type i = 0; i < graph.size(); ++i) {
-					std::vector<T>& vertex = graph.get_vertex_id(i);//TODO:struct vertex
-					for (size_t j = 0; j < vertex.size(); ++j) {
-						size_t v = vertex[j];
-						matrix(i, v) = 1;
-					}
-				}
-			}
-		
-		template <typename T>
-			void eigen_centrality(Graph<T>& graph, std::map<T, double>& result)
-			{
-				Eigen::MatrixXd matrix(graph.size(), graph.size());
-				graph_to_matrix<T>(graph, matrix);
-
-				Eigen::EigenSolver<Eigen::MatrixXd> es(matrix);
-				Eigen::VectorXcd v = es.eigenvectors().col(graph.size() - 1);
-				
-				for (size_t i = 0; i < v.rows(); ++i) {
-					T name = graph.get_vertex_name(i);
-					result[name] = v[i].real();
-				}
-				//copy back
-			}
-*/
-		/*
-		 * test
-		 */
 	template <class Graph>
 		void update_vector(Graph& graph, std::vector<double>& m_vec)
 		{
@@ -63,7 +31,7 @@ namespace smm {
 			return;
 		}
 		
-		void normlize_vector(std::vector<double>& m_vec)
+		void normalize_vector(std::vector<double>& m_vec)
 		{
 			double sum = 0;
 			for (int i = 0; i < m_vec.size(); ++i) {
@@ -86,7 +54,7 @@ namespace smm {
 			SMM_CHECK_GREATER_EQUAL(result.size(), graph.size());
 			
 			std::vector<double> old_vector(graph.size(), 1.0/graph.size());
-			normlize_vector(old_vector);
+			normalize_vector(old_vector);
 			std::vector<double> new_vector(old_vector);
 			double delta = 1;
 			double eps = 0;
@@ -94,7 +62,7 @@ namespace smm {
 			while (delta > eps) {
 				update_vector(graph, new_vector);
 				update_vector(graph, new_vector);
-				normlize_vector(new_vector);
+				normalize_vector(new_vector);
 				delta = 0;
 				for (int i = 0; i < old_vector.size(); ++i) {
 					delta += fabs(new_vector[i] - old_vector[i]);
@@ -103,12 +71,12 @@ namespace smm {
 			}
 			
 			update_vector(graph, new_vector);
-			normlize_vector(new_vector);
+			normalize_vector(new_vector);
 			for (int i = 0; i < result.size(); ++i) {
 				result[i] = (new_vector[i] + old_vector[i]) / 2;
 			}
 			
-			normlize_vector(result);
+			normalize_vector(result);
 			return;
 		}
 }//smm
