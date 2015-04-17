@@ -1,15 +1,12 @@
 #ifndef SMM_EIGEN_CENTRAL_H
 #define SMM_EIGEN_CENTRAL_H
 
-#include "../include/base/graph.h"
-//#include "../include/Eigen/Dense"
 #include <cmath>
-#include <stdlib.h>
-#include <time.h>
 #include <iostream>
+#include "../base/concept.h"
+#include "../base/graph.h"
 
 namespace smm {
-		using base::Graph;
 
 /*		template <typename T>
 			void graph_to_matrix(Graph<T>& graph, Eigen::MatrixXd& matrix)
@@ -42,74 +39,78 @@ namespace smm {
 		/*
 		 * test
 		 */
-		template <typename T>
-			void eigen_centrality(Graph<T>& graph, std::map<T,double>& result)
-			{
-				size_t vertex_num = graph.size();
-				double *matrix = new double[vertex_num * vertex_num];
-				for (typename Graph<T>::size_type i = 0; i<vertex_num; ++i) {
-					std::vector<T>& vertex = graph.get_vertex_id(i);
-					for (size_t j=0; j < vertex.size(); ++j) {
-						size_t v = vertex[j];
-						matrix[ i*vertex_num +v]=1;
-					}
+	template <class Graph>
+		void update_vector(Graph& graph, std::vector<double>& m_vec)
+		{
+			SMM_CHECK_GREATER_EQUAL(graph.size(), m_vec.size());
+			typename Graph::vertex_iterator v_begin = graph.vertex_begin();
+			typename Graph::vertex_iterator v_end = graph.vertex_end();
+			typename Graph::vertex_iterator v_it;
+			std::vector<double> new_vec(m_vec.size(),0);
+		
+			for (v_it = v_begin; v_it != v_end; ++v_it) {
+				typename Graph::vertex_edge_iterator veb = v_it->edges.begin();
+				typename Graph::vertex_edge_iterator vee = v_it->edges.end();
+				typename Graph::vertex_edge_iterator ve;
+				size_t v_id = v_it->vertex_id;
+				
+				for (ve = veb; ve != vee; ++ve) {
+					size_t to_id = (*ve)->to_id;
+					new_vec[to_id] += m_vec[v_id];
 				}
-
-				double *eigen = new double[vertex_num];
-				double *vec = new double[vertex_num];
-				double *new_vec = new double[vertex_num];
-				double norm = 0;
-				double eps = 0.000001;
-				double lamda = 0;
-			
-				for (int pos = 0; pos<vertex_num; ++pos) {
-					for (int i = 0; i<vertex_num; ++i) {
-						vec[i] = 0;
-					}
-					vec[pos] = 1;	
-					double delta = 1;	
-					int iter = 0;
-					while (delta > eps) {
-						//calculate new vec
-						for(int i = 0; i<vertex_num; ++i) {
-							new_vec[i]=0;
-							for(int j = 0; j<vertex_num; ++j) {
-								new_vec[i] += matrix[j*vertex_num +i]*vec[j];
-							}
-						}
-						//normalize new vec
-						norm=0;
-						for (int i = 0; i<vertex_num; ++i) {
-							norm += new_vec[i]*new_vec[i];
-						}
-						norm = pow(norm,0.5);
-						for (int i = 0; i<vertex_num; ++i) {
-							new_vec[i] /= norm;
-						}
-						//calculate delta and update vec
-						delta = 0;
-						for (int i = 0; i<vertex_num; ++i) {
-							delta += fabs(new_vec[i]-vec[i]);
-							vec[i] = new_vec[i];
-						}
-					}
-					if (norm > lamda) {
-						lamda = norm;
-						for(int i = 0; i<vertex_num; ++i) {
-							eigen[i] = vec[i];
-						}
-					}
-				}
-				for (int i = 0; i<vertex_num; ++i) {
-					T name = graph.get_vertex_name(i);
-					result[name] = eigen[i];
-				}
-				delete []eigen;
-				delete []vec;
-				delete []new_vec;
-				delete []matrix;
 			}
-
+			m_vec = new_vec;
+			return;
+		}
+		
+		void normlize_vector(std::vector<double>& m_vec)
+		{
+			double sum = 0;
+			for (int i = 0; i < m_vec.size(); ++i) {
+				sum += m_vec[i]*m_vec[i];
+			}
+			sum = pow(sum, 0.5);
+			if (sum == 0) {
+				std::cerr << "error: zero vector input" << std::endl;
+				return;
+			}
+			for (int i = 0; i < m_vec.size(); ++i) {
+				m_vec[i] /= sum;
+			}
+			return;
+		}
+		
+	template <class Graph>
+		void eigen_centrality(Graph& graph, std::vector<double>& result)
+		{
+			SMM_CHECK_GREATER_EQUAL(result.size(), graph.size());
+			
+			std::vector<double> old_vector(graph.size(), 1.0/graph.size());
+			normlize_vector(old_vector);
+			std::vector<double> new_vector(old_vector);
+			double delta = 1;
+			double eps = 0;
+			
+			while (delta > eps) {
+				update_vector(graph, new_vector);
+				update_vector(graph, new_vector);
+				normlize_vector(new_vector);
+				delta = 0;
+				for (int i = 0; i < old_vector.size(); ++i) {
+					delta += fabs(new_vector[i] - old_vector[i]);
+				}
+				old_vector = new_vector;
+			}
+			
+			update_vector(graph, new_vector);
+			normlize_vector(new_vector);
+			for (int i = 0; i < result.size(); ++i) {
+				result[i] = (new_vector[i] + old_vector[i]) / 2;
+			}
+			
+			normlize_vector(result);
+			return;
+		}
 }//smm
 
 #endif 
