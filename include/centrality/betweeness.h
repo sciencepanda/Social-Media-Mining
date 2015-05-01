@@ -18,15 +18,7 @@ namespace smm {
 				std::vector<double> sigma(graph.size());
 
 				single_source_dijkstra_full(graph, i, nodes, paths, dist, sigma);
-				//XXX
-//				std::cout << "tag :" << graph.get_vertex_name(i) << std::endl;
-//
-//				for (std::map<std::size_t, double>::iterator it = dist.begin(); it != dist.end();
-//						++it) {
-//					std::cout << "i : " << graph.get_vertex_name(it->first) << std::endl;
-//					std::cout << "dist : " << it->second << std::endl;
-//				}
-//
+
 				//accumulate
 				std::vector<double> delta(graph.size());
 				while (!nodes.empty()) {
@@ -41,7 +33,6 @@ namespace smm {
 //						std::cout << "prev " << graph.get_vertex_name(v) << std::endl;
 						delta[v] += sigma[v] * coeff;
 					}
-					std::cout << std::endl;
 					
 					if (u != i) {
 						result[u] += delta[u];

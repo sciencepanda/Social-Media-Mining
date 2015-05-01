@@ -16,7 +16,7 @@ namespace smm {
 
 			for (v_it = v_begin; v_it != v_end; ++v_it) {
 				std::size_t degree = v_it->edges.size();
-				result[v_it->vertex_id] = static_cast<double>(degree) / graph.size();
+				result[v_it->vertex_id] = static_cast<double>(degree) / (graph.size() - 1);
 			}
 		}
 }//smm
